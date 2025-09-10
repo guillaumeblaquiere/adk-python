@@ -1019,7 +1019,7 @@ class AdkWebServer:
 
     # Add to memory the current session
     @app.post("/apps/{app_name}/users/{user_id}/sessions/{session_id}/add_to_memory")
-    async def custom_dummy_endpoint( app_name: str, user_id: str, session_id: str):
+    async def add_session_to_memory( app_name: str, user_id: str, session_id: str):
         session = await self.session_service.get_session(
             app_name=app_name,
             user_id=user_id,
