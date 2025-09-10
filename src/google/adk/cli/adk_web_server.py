@@ -1032,7 +1032,7 @@ class AdkWebServer:
           session_id: The ID of the session to add to memory.
 
       Raises:
-          HTTPException: If the session with the given IDs is not found.
+          HTTPException: If the session with the given ID is not found.
       """
       session = await self.session_service.get_session(
           app_name=app_name,
