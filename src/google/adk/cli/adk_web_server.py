@@ -1022,26 +1022,26 @@ class AdkWebServer:
         status_code=204,
     )
     async def add_session_to_memory(
-            app_name: str, user_id: str, session_id: str
+        app_name: str, user_id: str, session_id: str
     ) -> None:
-        """Adds all events from a given session to the memory service.
+      """Adds all events from a given session to the memory service.
 
-        Args:
-            app_name: The name of the application.
-            user_id: The ID of the user.
-            session_id: The ID of the session to add to memory.
+      Args:
+          app_name: The name of the application.
+          user_id: The ID of the user.
+          session_id: The ID of the session to add to memory.
 
-        Raises:
-            HTTPException: If the session with the given IDs is not found.
-        """
-        session = await self.session_service.get_session(
-            app_name=app_name,
-            user_id=user_id,
-            session_id=session_id,
-        )
-        if not session:
-            raise HTTPException(status_code=404, detail="Session not found")
-        await self.memory_service.add_session_to_memory(session)
+      Raises:
+          HTTPException: If the session with the given IDs is not found.
+      """
+      session = await self.session_service.get_session(
+          app_name=app_name,
+          user_id=user_id,
+          session_id=session_id,
+      )
+      if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+      await self.memory_service.add_session_to_memory(session)
 
     @app.post("/run", response_model_exclude_none=True)
     async def run_agent(req: RunAgentRequest) -> list[Event]:
