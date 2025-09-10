@@ -1018,7 +1018,7 @@ class AdkWebServer:
       )
 
     @app.post(
-        "/apps/{app_name}/users/{user_id}/sessions/{session_id}/add_to_memory",
+        "/apps/{app_name}/users/{user_id}/sessions/{session_id}/add-to-memory",
         status_code=204,
     )
     async def add_session_to_memory(
