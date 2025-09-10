@@ -1019,12 +1019,14 @@ class AdkWebServer:
 
     # Add to memory the current session
     @app.post("/apps/{app_name}/users/{user_id}/sessions/{session_id}/add_to_memory")
-    async def add_session_to_memory( app_name: str, user_id: str, session_id: str):
+    async def add_session_to_memory(app_name: str, user_id: str, session_id: str):
         session = await self.session_service.get_session(
             app_name=app_name,
             user_id=user_id,
             session_id=session_id
         )
+        if not session:
+            raise HTTPException(status_code=404, detail="Session not found")
         await self.memory_service.add_session_to_memory(session)
 
     @app.post("/run", response_model_exclude_none=True)
