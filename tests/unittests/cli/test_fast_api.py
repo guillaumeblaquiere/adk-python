@@ -939,15 +939,17 @@ def test_a2a_disabled_by_default(test_app):
   assert response.status_code == 200
   logger.info("A2A disabled by default test passed")
 
-def test_add_session_to_memory(test_app, create_test_session):
-    """Test adding a session to memory."""
-    info = create_test_session
-    url = f"/apps/{info['app_name']}/users/{info['user_id']}/sessions/{info['session_id']}/add-to-memory"
-    response = test_app.post(url)
 
-    # Verify the response
-    assert response.status_code == 204
-    logger.info("Add session to memory test completed successfully")
-    
+def test_add_session_to_memory(test_app, create_test_session):
+  """Test adding a session to memory."""
+  info = create_test_session
+  url = f"/apps/{info['app_name']}/users/{info['user_id']}/sessions/{info['session_id']}/add-to-memory"
+  response = test_app.post(url)
+
+  # Verify the response
+  assert response.status_code == 204
+  logger.info("Add session to memory test completed successfully")
+
+
 if __name__ == "__main__":
   pytest.main(["-xvs", __file__])
