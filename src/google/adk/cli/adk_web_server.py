@@ -30,6 +30,7 @@ from typing import Optional
 from fastapi import FastAPI
 from fastapi import HTTPException
 from fastapi import Query
+from fastapi import Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import RedirectResponse
 from fastapi.responses import StreamingResponse
@@ -1023,7 +1024,7 @@ class AdkWebServer:
     )
     async def add_session_to_memory(
         app_name: str, user_id: str, session_id: str
-    ) -> None:
+    ) -> Response:
       """Adds all events from a given session to the memory service.
 
       Args:
@@ -1042,7 +1043,7 @@ class AdkWebServer:
       if not session:
         raise HTTPException(status_code=404, detail="Session not found")
       await self.memory_service.add_session_to_memory(session)
-      return None
+      return Response(status_code=204)
 
     @app.post("/run", response_model_exclude_none=True)
     async def run_agent(req: RunAgentRequest) -> list[Event]:
