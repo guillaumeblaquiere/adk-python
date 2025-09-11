@@ -1042,6 +1042,7 @@ class AdkWebServer:
       if not session:
         raise HTTPException(status_code=404, detail="Session not found")
       await self.memory_service.add_session_to_memory(session)
+      return None
 
     @app.post("/run", response_model_exclude_none=True)
     async def run_agent(req: RunAgentRequest) -> list[Event]:
