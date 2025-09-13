@@ -479,6 +479,8 @@ class RemoteA2aAgent(BaseAgent):
           context_id=context_id,
       )
 
+    logger.debug(build_a2a_request_log(a2a_request))
+
     try:
       async for a2a_response in self._a2a_client.send_message(
           request=a2a_request
@@ -492,9 +494,16 @@ class RemoteA2aAgent(BaseAgent):
         event.custom_metadata[A2A_METADATA_PREFIX + "request"] = (
             a2a_request.model_dump(exclude_none=True, by_alias=True)
         )
-        event.custom_metadata[A2A_METADATA_PREFIX + "response"] = (
-            a2a_response.model_dump(exclude_none=True, by_alias=True)
-        )
+        # If the response is a ClientEvent, record the task state, otherwise
+        # record the message object.
+        if isinstance(a2a_response, tuple):
+          event.custom_metadata[A2A_METADATA_PREFIX + "response"] = (
+              a2a_response[0].model_dump(exclude_none=True, by_alias=True)
+          )
+        else:
+          event.custom_metadata[A2A_METADATA_PREFIX + "response"] = (
+              a2a_response.model_dump(exclude_none=True, by_alias=True)
+          )
 
         yield event
 
