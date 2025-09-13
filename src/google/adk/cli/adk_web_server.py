@@ -208,6 +208,13 @@ class RunEvalRequest(common.BaseModel):
   eval_metrics: list[EvalMetric]
 
 
+class UpdateMemoryRequest(common.BaseModel):
+  """Request to add a session to the memory service."""
+
+  session_id: str
+  """The ID of the session to add to memory."""
+
+
 class RunEvalResult(common.BaseModel):
   eval_set_file: str
   eval_set_id: str
@@ -1018,27 +1025,48 @@ class AdkWebServer:
           filename=artifact_name,
       )
 
-    @app.post(
-        "/apps/{app_name}/users/{user_id}/sessions/{session_id}/add-to-memory",
+    @app.patch(
+        "/apps/{app_name}/users/{user_id}/memory",
         status_code=204,
     )
-    async def add_session_to_memory(
-        app_name: str, user_id: str, session_id: str
+    async def patch_memory(
+        app_name: str, user_id: str, memory_request: UpdateMemoryRequest
     ) -> Response:
       """Adds all events from a given session to the memory service.
 
       Args:
           app_name: The name of the application.
           user_id: The ID of the user.
-          session_id: The ID of the session to add to memory.
+          memory_request: The request containing the session ID to add to memory.
 
       Raises:
-          HTTPException: If the session with the given ID is not found.
+          HTTPException(
+              status_code=400, detail="Memory service is not configured."
+          )
+          HTTPException(
+              status_code=400, detail="Memory request cannot be empty"
+          )
+          HTTPException(
+              status_code=400, detail="Session ID cannot be empty"
+          )
       """
+      if not self.memory_service:
+        raise HTTPException(
+            status_code=400, detail="Memory service is not configured."
+        )
+      if memory_request is None:
+        raise HTTPException(
+            status_code=400, detail="Memory request cannot be empty"
+        )
+      if memory_request.session_id is None:
+        raise HTTPException(
+            status_code=400, detail="Session ID cannot be empty"
+        )
+
       session = await self.session_service.get_session(
           app_name=app_name,
           user_id=user_id,
-          session_id=session_id,
+          session_id=memory_request.session_id,
       )
       if not session:
         raise HTTPException(status_code=404, detail="Session not found")

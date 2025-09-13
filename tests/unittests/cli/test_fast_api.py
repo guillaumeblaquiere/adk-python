@@ -940,14 +940,16 @@ def test_a2a_disabled_by_default(test_app):
   logger.info("A2A disabled by default test passed")
 
 
-def test_add_session_to_memory(test_app, create_test_session):
+def test_patch_memory(test_app, create_test_session, mock_memory_service):
   """Test adding a session to memory."""
   info = create_test_session
-  url = f"/apps/{info['app_name']}/users/{info['user_id']}/sessions/{info['session_id']}/add-to-memory"
-  response = test_app.post(url)
+  url = f"/apps/{info['app_name']}/users/{info['user_id']}/memory"
+  payload = {"session_id": info["session_id"]}
+  response = test_app.patch(url, json=payload)
 
   # Verify the response
   assert response.status_code == 204
+  mock_memory_service.add_session_to_memory.assert_called_once()
   logger.info("Add session to memory test completed successfully")
 
 
