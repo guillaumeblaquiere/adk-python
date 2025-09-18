@@ -1170,13 +1170,12 @@ class AdkWebServer:
         raise HTTPException(
             status_code=400, detail="Memory service is not configured."
         )
-      if update_memory_request is None:
+      if (
+          update_memory_request is None
+          or update_memory_request.session_id is None
+      ):
         raise HTTPException(
-            status_code=400, detail="Update memory request cannot be empty"
-        )
-      if update_memory_request.session_id is None:
-        raise HTTPException(
-            status_code=400, detail="Session ID cannot be empty"
+            status_code=400, detail="Update memory request is invalid."
         )
 
       session = await self.session_service.get_session(
