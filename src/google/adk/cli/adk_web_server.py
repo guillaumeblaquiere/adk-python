@@ -1152,19 +1152,16 @@ class AdkWebServer:
           filename=artifact_name,
       )
 
-    @app.patch(
-        "/apps/{app_name}/users/{user_id}/memory",
-        status_code=204,
-    )
+    @app.patch("/apps/{app_name}/users/{user_id}/memory")
     async def patch_memory(
-        app_name: str, user_id: str, memory_request: UpdateMemoryRequest
-    ) -> Response:
+        app_name: str, user_id: str, update_memory_request: UpdateMemoryRequest
+    ) -> None:
       """Adds all events from a given session to the memory service.
 
       Args:
           app_name: The name of the application.
           user_id: The ID of the user.
-          memory_request: The request containing the session ID to add to memory.
+          update_memory_request: The memory request for the update
 
       Raises:
           HTTPException(
@@ -1181,11 +1178,11 @@ class AdkWebServer:
         raise HTTPException(
             status_code=400, detail="Memory service is not configured."
         )
-      if memory_request is None:
+      if update_memory_request is None:
         raise HTTPException(
-            status_code=400, detail="Memory request cannot be empty"
+            status_code=400, detail="Update memory request cannot be empty"
         )
-      if memory_request.session_id is None:
+      if update_memory_request.session_id is None:
         raise HTTPException(
             status_code=400, detail="Session ID cannot be empty"
         )
@@ -1193,12 +1190,11 @@ class AdkWebServer:
       session = await self.session_service.get_session(
           app_name=app_name,
           user_id=user_id,
-          session_id=memory_request.session_id,
+          session_id=update_memory_request.session_id,
       )
       if not session:
         raise HTTPException(status_code=404, detail="Session not found")
       await self.memory_service.add_session_to_memory(session)
-      return Response(status_code=204)
 
     @app.post("/run", response_model_exclude_none=True)
     async def run_agent(req: RunAgentRequest) -> list[Event]:

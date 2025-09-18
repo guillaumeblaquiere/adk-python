@@ -948,7 +948,7 @@ def test_patch_memory(test_app, create_test_session, mock_memory_service):
   response = test_app.patch(url, json=payload)
 
   # Verify the response
-  assert response.status_code == 204
+  assert response.status_code == 200
   mock_memory_service.add_session_to_memory.assert_called_once()
   logger.info("Add session to memory test completed successfully")
 
