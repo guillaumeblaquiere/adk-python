@@ -1164,15 +1164,7 @@ class AdkWebServer:
           update_memory_request: The memory request for the update
 
       Raises:
-          HTTPException(
-              status_code=400, detail="Memory service is not configured."
-          )
-          HTTPException(
-              status_code=400, detail="Memory request cannot be empty"
-          )
-          HTTPException(
-              status_code=400, detail="Session ID cannot be empty"
-          )
+          HTTPException: If the memory service is not configured or the request is invalid.
       """
       if not self.memory_service:
         raise HTTPException(
