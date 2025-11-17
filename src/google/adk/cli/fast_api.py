@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import copy
 import json
 import logging
 import os
@@ -350,7 +351,13 @@ def get_fast_api_app(
         """Factory function to create A2A runner with proper closure."""
 
         async def _get_a2a_runner_async() -> Runner:
-          return await adk_web_server.get_runner_async(captured_app_name)
+          original_runner = await adk_web_server.get_runner_async(captured_app_name)
+          runner = copy.copy(original_runner)  # Create a shallow copy
+          runner.memory_service = InMemoryMemoryService()
+          runner.session_service = InMemorySessionService()
+          runner.artifact_service = InMemoryArtifactService()
+          runner.credential_service = InMemoryCredentialService()
+          return runner
 
         return _get_a2a_runner_async
 
