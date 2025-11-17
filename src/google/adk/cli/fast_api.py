@@ -352,11 +352,13 @@ def get_fast_api_app(
 
         async def _get_a2a_runner_async() -> Runner:
           original_runner = await adk_web_server.get_runner_async(captured_app_name)
-          runner = copy.copy(original_runner)  # Create a shallow copy
-          runner.memory_service = InMemoryMemoryService()
-          runner.session_service = InMemorySessionService()
-          runner.artifact_service = InMemoryArtifactService()
-          runner.credential_service = InMemoryCredentialService()
+          runner = Runner(
+              app=original_runner.app,
+              session_service=InMemorySessionService(),
+              artifact_service=InMemoryArtifactService(),
+              memory_service=InMemoryMemoryService(),
+              credential_service=InMemoryCredentialService(),
+          )
           return runner
 
         return _get_a2a_runner_async
