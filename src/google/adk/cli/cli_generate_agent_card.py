@@ -76,8 +76,7 @@ async def _generate_agent_card_async(
       agent = loader.load_agent(agent_name)
       # If it's an App, get the root agent
       if hasattr(agent, "root_agent"):
-         agent = agent.root_agent
-         
+        agent = agent.root_agent
       builder = AgentCardBuilder(
           agent=agent,
           rpc_url=f"{protocol}://{host}:{port}/{agent_name}",
