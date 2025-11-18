@@ -56,7 +56,7 @@ async def _generate_agent_card_async(
 ) -> None:
   try:
     from ..a2a.utils.agent_card_builder import AgentCardBuilder
-  except ImportError as e:
+  except ImportError:
     click.secho(
         "Error: 'a2a' package is required for this command. "
         "Please install it with 'pip install google-adk[a2a]'.",
