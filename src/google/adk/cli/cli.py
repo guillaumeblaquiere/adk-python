@@ -37,6 +37,7 @@ from ..utils.context_utils import Aclosing
 from ..utils.env_utils import is_env_enabled
 from .utils import envs
 from .utils.agent_loader import AgentLoader
+from .cli_generate_agent_card import generate_agent_card
 
 
 class InputFile(BaseModel):
