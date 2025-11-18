@@ -68,7 +68,6 @@ async def _generate_agent_card_async(
   cwd = os.getcwd()
   loader = AgentLoader(agents_dir=cwd)
   agent_names = loader.list_agents()
-  
   agent_cards = []
 
   for agent_name in agent_names:
@@ -90,7 +89,6 @@ async def _generate_agent_card_async(
         agent_json_path = os.path.join(agent_dir, "agent.json")
         with open(agent_json_path, "w", encoding="utf-8") as f:
           json.dump(card_dict, f, indent=2)
-          
     except Exception as e:
       # Log error but continue with other agents
       # Using click.echo to print to stderr to not mess up JSON output on stdout
