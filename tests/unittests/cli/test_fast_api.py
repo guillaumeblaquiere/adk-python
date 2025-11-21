@@ -31,8 +31,8 @@ from google.adk.agents.base_agent import BaseAgent
 from google.adk.agents.run_config import RunConfig
 from google.adk.apps.app import App
 from google.adk.artifacts.in_memory_artifact_service import InMemoryArtifactService
-from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.auth.credential_service.in_memory_credential_service import InMemoryCredentialService
+from google.adk.cli.fast_api import get_fast_api_app
 from google.adk.evaluation.eval_case import EvalCase
 from google.adk.evaluation.eval_case import Invocation
 from google.adk.evaluation.eval_result import EvalSetResult
@@ -990,20 +990,18 @@ def test_a2a_runner_factory_creates_isolated_runner(temp_agents_dir_with_a2a):
   mock_web_server_instance.list_agents.return_value = ["test_a2a_agent"]
 
   # 2. Patch dependencies in the fast_api module
-  with patch(
-      "google.adk.cli.fast_api.AdkWebServer"
-  ) as mock_web_server, patch(
-      "a2a.server.apps.A2AStarletteApplication"
-  ) as mock_a2a_app, patch(
-      "a2a.server.tasks.InMemoryTaskStore"
-  ) as mock_task_store, patch(
-      "google.adk.a2a.executor.a2a_agent_executor.A2aAgentExecutor"
-  ) as mock_executor, patch(
-      "a2a.server.request_handlers.DefaultRequestHandler"
-  ) as mock_handler, patch(
-      "a2a.types.AgentCard"
-  ) as mock_agent_card, patch(
-      "a2a.utils.constants.AGENT_CARD_WELL_KNOWN_PATH", "/agent.json"
+  with (
+      patch("google.adk.cli.fast_api.AdkWebServer") as mock_web_server,
+      patch("a2a.server.apps.A2AStarletteApplication") as mock_a2a_app,
+      patch("a2a.server.tasks.InMemoryTaskStore") as mock_task_store,
+      patch(
+          "google.adk.a2a.executor.a2a_agent_executor.A2aAgentExecutor"
+      ) as mock_executor,
+      patch(
+          "a2a.server.request_handlers.DefaultRequestHandler"
+      ) as mock_handler,
+      patch("a2a.types.AgentCard") as mock_agent_card,
+      patch("a2a.utils.constants.AGENT_CARD_WELL_KNOWN_PATH", "/agent.json"),
   ):
     mock_web_server.return_value = mock_web_server_instance
     mock_task_store.return_value = MagicMock()
@@ -1047,9 +1045,7 @@ def test_a2a_runner_factory_creates_isolated_runner(temp_agents_dir_with_a2a):
     assert isinstance(a2a_runner.memory_service, InMemoryMemoryService)
     assert isinstance(a2a_runner.session_service, InMemorySessionService)
     assert isinstance(a2a_runner.artifact_service, InMemoryArtifactService)
-    assert isinstance(
-        a2a_runner.credential_service, InMemoryCredentialService
-    )
+    assert isinstance(a2a_runner.credential_service, InMemoryCredentialService)
 
     # Assert that the original runner's services are unchanged
     assert not isinstance(original_runner.memory_service, InMemoryMemoryService)

@@ -35,7 +35,8 @@ from . import cli_create
 from . import cli_deploy
 from .. import version
 from ..evaluation.constants import MISSING_EVAL_DEPENDENCIES_MESSAGE
-from .cli import run_cli, generate_agent_card
+from .cli import generate_agent_card
+from .cli import run_cli
 from .fast_api import get_fast_api_app
 from .utils import envs
 from .utils import evals
@@ -1811,5 +1812,6 @@ def cli_deploy_gke(
     )
   except Exception as e:
     click.secho(f"Deploy failed: {e}", fg="red", err=True)
+
 
 main.add_command(generate_agent_card)

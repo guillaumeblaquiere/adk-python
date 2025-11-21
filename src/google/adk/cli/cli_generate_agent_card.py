@@ -11,10 +11,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+from __future__ import annotations
 
 import asyncio
 import json
 import os
+
 import click
 
 from .utils.agent_loader import AgentLoader
@@ -46,9 +48,7 @@ def generate_agent_card(
     protocol: str, host: str, port: str, create_file: bool
 ) -> None:
   """Generates agent cards for all detected agents."""
-  asyncio.run(
-      _generate_agent_card_async(protocol, host, port, create_file)
-  )
+  asyncio.run(_generate_agent_card_async(protocol, host, port, create_file))
 
 
 async def _generate_agent_card_async(

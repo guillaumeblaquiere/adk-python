@@ -35,9 +35,9 @@ from ..sessions.in_memory_session_service import InMemorySessionService
 from ..sessions.session import Session
 from ..utils.context_utils import Aclosing
 from ..utils.env_utils import is_env_enabled
+from .cli_generate_agent_card import generate_agent_card
 from .utils import envs
 from .utils.agent_loader import AgentLoader
-from .cli_generate_agent_card import generate_agent_card
 
 
 class InputFile(BaseModel):
