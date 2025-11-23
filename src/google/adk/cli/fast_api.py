@@ -354,12 +354,19 @@ def get_fast_api_app(
           original_runner = await adk_web_server.get_runner_async(
               captured_app_name
           )
+          kwargs = {}
+          if original_runner.app:
+            kwargs["app"] = original_runner.app
+          else:
+            kwargs["app_name"] = original_runner.app_name
+            kwargs["agent"] = original_runner.agent
+
           runner = Runner(
-              app=original_runner.app,
               session_service=InMemorySessionService(),
               artifact_service=InMemoryArtifactService(),
               memory_service=InMemoryMemoryService(),
               credential_service=InMemoryCredentialService(),
+              **kwargs,
           )
           return runner
 
