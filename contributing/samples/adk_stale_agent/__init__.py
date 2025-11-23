@@ -12,11 +12,4 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-"""Agent Builder Assistant instance for ADK web testing."""
-from __future__ import annotations
-
-from .adk_agent_builder_assistant import AgentBuilderAssistant
-
-# Create the agent instance using the factory
-# The root_agent variable is what ADK looks for when loading agents
-root_agent = AgentBuilderAssistant.create_agent()
+from . import agent
