@@ -182,10 +182,6 @@ class CredentialManager:
     if credential:
       return credential
 
-    # Check if we have a cached exchanged credential
-    if self._auth_config.exchanged_auth_credential:
-      return self._auth_config.exchanged_auth_credential
-
     return None
 
   async def _load_from_credential_service(
