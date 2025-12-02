@@ -76,6 +76,7 @@ class OAuth2Auth(BaseModelWithConfig):
   auth_response_uri: Optional[str] = None
   auth_code: Optional[str] = None
   access_token: Optional[str] = None
+  id_token: Optional[str] = None
   refresh_token: Optional[str] = None
   expires_at: Optional[int] = None
   expires_in: Optional[int] = None

@@ -108,6 +108,7 @@ def update_credential_with_tokens(
   """
   auth_credential.oauth2.access_token = tokens.get("access_token")
   auth_credential.oauth2.refresh_token = tokens.get("refresh_token")
+  auth_credential.oauth2.id_token = tokens.get("id_token", None)
   auth_credential.oauth2.expires_at = (
       int(tokens.get("expires_at")) if tokens.get("expires_at") else None
   )
