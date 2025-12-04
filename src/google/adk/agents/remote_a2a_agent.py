@@ -26,39 +26,28 @@ from typing import Union
 from urllib.parse import urlparse
 import uuid
 
-try:
-  from a2a.client import Client as A2AClient
-  from a2a.client import ClientEvent as A2AClientEvent
-  from a2a.client.card_resolver import A2ACardResolver
-  from a2a.client.client import ClientConfig as A2AClientConfig
-  from a2a.client.client_factory import ClientFactory as A2AClientFactory
-  from a2a.client.errors import A2AClientError
-  from a2a.types import AgentCard
-  from a2a.types import Message as A2AMessage
-  from a2a.types import Part as A2APart
-  from a2a.types import Role
-  from a2a.types import TaskArtifactUpdateEvent as A2ATaskArtifactUpdateEvent
-  from a2a.types import TaskState
-  from a2a.types import TaskStatusUpdateEvent as A2ATaskStatusUpdateEvent
-  from a2a.types import TransportProtocol as A2ATransport
-except ImportError as e:
-  import sys
-
-  if sys.version_info < (3, 10):
-    raise ImportError(
-        "A2A requires Python 3.10 or above. Please upgrade your Python version."
-    ) from e
-  else:
-    raise e
+from a2a.client import Client as A2AClient
+from a2a.client import ClientEvent as A2AClientEvent
+from a2a.client.card_resolver import A2ACardResolver
+from a2a.client.client import ClientConfig as A2AClientConfig
+from a2a.client.client_factory import ClientFactory as A2AClientFactory
+from a2a.client.errors import A2AClientError
+from a2a.types import AgentCard
+from a2a.types import Message as A2AMessage
+from a2a.types import Part as A2APart
+from a2a.types import Role
+from a2a.types import TaskArtifactUpdateEvent as A2ATaskArtifactUpdateEvent
+from a2a.types import TaskState
+from a2a.types import TaskStatusUpdateEvent as A2ATaskStatusUpdateEvent
+from a2a.types import TransportProtocol as A2ATransport
+from google.genai import types as genai_types
+import httpx
 
 try:
   from a2a.utils.constants import AGENT_CARD_WELL_KNOWN_PATH
 except ImportError:
   # Fallback for older versions of a2a-sdk.
   AGENT_CARD_WELL_KNOWN_PATH = "/.well-known/agent.json"
-
-from google.genai import types as genai_types
-import httpx
 
 from ..a2a.converters.event_converter import convert_a2a_message_to_event
 from ..a2a.converters.event_converter import convert_a2a_task_to_event
@@ -354,18 +343,18 @@ class RemoteA2aAgent(BaseAgent):
 
   def _construct_message_parts_from_session(
       self, ctx: InvocationContext
-  ) -> tuple[list[A2APart], Optional[str]]:
+  ) -> tuple[list[A2APart], Optional[str], Optional[str]]:
     """Construct A2A message parts from session events.
 
     Args:
       ctx: The invocation context
 
     Returns:
-      List of A2A parts extracted from session events, context ID,
-      request metadata
+      List of A2A parts extracted from session events, context ID, task ID
     """
     message_parts: list[A2APart] = []
     context_id = None
+    task_id = None
 
     events_to_process = []
     for event in reversed(ctx.session.events):
@@ -375,6 +364,7 @@ class RemoteA2aAgent(BaseAgent):
         if event.custom_metadata:
           metadata = event.custom_metadata
           context_id = metadata.get(A2A_METADATA_PREFIX + "context_id")
+          task_id = metadata.get(A2A_METADATA_PREFIX + "task_id")
         break
       events_to_process.append(event)
 
@@ -395,7 +385,7 @@ class RemoteA2aAgent(BaseAgent):
         else:
           logger.warning("Failed to convert part to A2A format: %s", part)
 
-    return message_parts, context_id
+    return message_parts, context_id, task_id
 
   async def _handle_a2a_response(
       self, a2a_response: A2AClientEvent | A2AMessage, ctx: InvocationContext
@@ -511,8 +501,8 @@ class RemoteA2aAgent(BaseAgent):
     # Create A2A request for function response or regular message
     a2a_request = self._create_a2a_request_for_user_function_response(ctx)
     if not a2a_request:
-      message_parts, context_id = self._construct_message_parts_from_session(
-          ctx
+      message_parts, context_id, task_id = (
+          self._construct_message_parts_from_session(ctx)
       )
 
       if not message_parts:
@@ -532,6 +522,7 @@ class RemoteA2aAgent(BaseAgent):
           parts=message_parts,
           role="user",
           context_id=context_id,
+          task_id=task_id,
       )
 
     logger.debug(build_a2a_request_log(a2a_request))
