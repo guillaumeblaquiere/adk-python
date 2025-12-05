@@ -81,6 +81,12 @@ class AuthConfig(BaseModelWithConfig):
     if auth_credential and auth_credential.model_extra:
       auth_credential = auth_credential.model_copy(deep=True)
       auth_credential.model_extra.clear()
+    
+    # Normalize secret to ensure stable key regardless of redaction
+    if auth_credential and auth_credential.oauth2:
+        auth_credential = auth_credential.model_copy(deep=True)
+        auth_credential.oauth2.client_secret = None
+
     credential_name = (
         f"{auth_credential.auth_type.value}_{hash(auth_credential.model_dump_json())}"
         if auth_credential

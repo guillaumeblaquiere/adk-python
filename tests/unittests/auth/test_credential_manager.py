@@ -36,19 +36,30 @@ from google.adk.auth.oauth2_discovery import AuthorizationServerMetadata
 import pytest
 
 
+
+def create_auth_config_mock():
+  """Creates a mock AuthConfig that returns itself on model_copy."""
+  # We remove spec=AuthConfig because accessing Pydantic fields on a spec-ed mock 
+  # can fail if they are not seen as class attributes or if we need dynamic attributes.
+  m = Mock() 
+  m.spec = AuthConfig # Optional: if we want isinstance to work, but Mock(spec=X) enforces attributes.
+  # Let's just use a plain Mock and configure what we need.
+  m.model_copy.side_effect = lambda **kwargs: m
+  return m
+
 class TestCredentialManager:
   """Test suite for CredentialManager."""
 
   def test_init(self):
     """Test CredentialManager initialization."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     manager = CredentialManager(auth_config)
     assert manager._auth_config == auth_config
 
   @pytest.mark.asyncio
   async def test_request_credential(self):
     """Test request_credential method."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     callback_context = Mock()
     callback_context.request_credential = Mock()
 
@@ -61,7 +72,7 @@ class TestCredentialManager:
   async def test_load_auth_credentials_success(self):
     """Test load_auth_credential with successful flow."""
     # Create mocks
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None
 
@@ -104,7 +115,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_load_auth_credentials_no_credential(self):
     """Test load_auth_credential when no credential is available."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None
     # Add auth_scheme for the _is_client_credentials_flow method
@@ -134,8 +145,9 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_load_existing_credential_already_exchanged(self):
     """Test _load_existing_credential when credential is already exchanged."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     mock_credential = Mock(spec=AuthCredential)
+    mock_credential.oauth2 = Mock()
     auth_config.exchanged_auth_credential = mock_credential
 
     callback_context = Mock()
@@ -150,7 +162,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_load_existing_credential_with_credential_service(self):
     """Test _load_existing_credential with credential service."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.exchanged_auth_credential = None
 
     mock_credential = Mock(spec=AuthCredential)
@@ -172,7 +184,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_load_from_credential_service_with_service(self):
     """Test _load_from_credential_service from callback context when credential service is available."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
 
     mock_credential = Mock(spec=AuthCredential)
 
@@ -196,7 +208,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_load_from_credential_service_no_service(self):
     """Test _load_from_credential_service when no credential service is available."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
 
     # Mock invocation context with no credential service
     invocation_context = Mock()
@@ -213,7 +225,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_save_credential_with_service(self):
     """Test _save_credential with credential service."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     mock_credential = Mock(spec=AuthCredential)
 
     # Mock credential service
@@ -236,7 +248,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_save_credential_no_service(self):
     """Test _save_credential when no credential service is available."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.exchanged_auth_credential = None
     mock_credential = Mock(spec=AuthCredential)
 
@@ -260,9 +272,10 @@ class TestCredentialManager:
     mock_oauth2_auth = Mock(spec=OAuth2Auth)
 
     mock_credential = Mock(spec=AuthCredential)
+    mock_credential.oauth2 = Mock()
     mock_credential.auth_type = AuthCredentialTypes.OAUTH2
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = Mock()
 
     # Mock refresher
@@ -297,7 +310,7 @@ class TestCredentialManager:
     mock_credential = Mock(spec=AuthCredential)
     mock_credential.auth_type = AuthCredentialTypes.API_KEY
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
 
     manager = CredentialManager(auth_config)
 
@@ -316,9 +329,10 @@ class TestCredentialManager:
   async def test_is_credential_ready_api_key(self):
     """Test _is_credential_ready with API key credential."""
     mock_raw_credential = Mock(spec=AuthCredential)
+    mock_raw_credential.oauth2 = Mock()
     mock_raw_credential.auth_type = AuthCredentialTypes.API_KEY
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = mock_raw_credential
 
     manager = CredentialManager(auth_config)
@@ -330,9 +344,10 @@ class TestCredentialManager:
   async def test_is_credential_ready_oauth2(self):
     """Test _is_credential_ready with OAuth2 credential (needs processing)."""
     mock_raw_credential = Mock(spec=AuthCredential)
+    mock_raw_credential.oauth2 = Mock()
     mock_raw_credential.auth_type = AuthCredentialTypes.OAUTH2
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = mock_raw_credential
 
     manager = CredentialManager(auth_config)
@@ -346,7 +361,7 @@ class TestCredentialManager:
     auth_scheme = Mock()
     auth_scheme.type_ = AuthSchemeType.oauth2
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = None
     auth_config.auth_scheme = auth_scheme
 
@@ -361,7 +376,7 @@ class TestCredentialManager:
     auth_scheme = Mock()
     auth_scheme.type_ = AuthSchemeType.openIdConnect
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = None
     auth_config.auth_scheme = auth_scheme
 
@@ -376,7 +391,7 @@ class TestCredentialManager:
     auth_scheme = Mock()
     auth_scheme.type_ = AuthSchemeType.apiKey
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = None
     auth_config.auth_scheme = auth_scheme
 
@@ -392,7 +407,7 @@ class TestCredentialManager:
     mock_raw_credential.auth_type = AuthCredentialTypes.OAUTH2
     mock_raw_credential.oauth2 = None
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = mock_raw_credential
     auth_config.auth_scheme = Mock()
 
@@ -407,10 +422,10 @@ class TestCredentialManager:
   ):
     """Test _validate_credential with OAuth2 missing scheme info."""
     mock_raw_credential = Mock(spec=AuthCredential)
+    mock_raw_credential.oauth2 = Mock()
     mock_raw_credential.auth_type = AuthCredentialTypes.OAUTH2
-    mock_raw_credential.oauth2 = Mock(spec=OAuth2Auth)
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.raw_auth_credential = mock_raw_credential
     auth_config.auth_scheme = extended_oauth2_scheme
 
@@ -428,7 +443,7 @@ class TestCredentialManager:
       self, service_account_credential, oauth2_auth_scheme
   ):
     """Test _exchange_credential with service account credential."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = oauth2_auth_scheme
 
     exchanged_credential = Mock(spec=AuthCredential)
@@ -457,7 +472,7 @@ class TestCredentialManager:
     mock_credential = Mock(spec=AuthCredential)
     mock_credential.auth_type = AuthCredentialTypes.API_KEY
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
 
     manager = CredentialManager(auth_config)
 
@@ -513,7 +528,7 @@ class TestCredentialManager:
       self, auth_server_metadata, extended_oauth2_scheme
   ):
     """Test _populate_auth_scheme successfully populates missing info."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = extended_oauth2_scheme
 
     manager = CredentialManager(auth_config)
@@ -536,7 +551,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_populate_auth_scheme_fail(self, extended_oauth2_scheme):
     """Test _populate_auth_scheme when auto-discovery fails."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = extended_oauth2_scheme
 
     manager = CredentialManager(auth_config)
@@ -555,7 +570,7 @@ class TestCredentialManager:
   @pytest.mark.asyncio
   async def test_populate_auth_scheme_noop(self, implicit_oauth2_scheme):
     """Test _populate_auth_scheme when auth scheme info not missing."""
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = implicit_oauth2_scheme
 
     manager = CredentialManager(auth_config)
@@ -578,7 +593,7 @@ class TestCredentialManager:
         )
     )
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = auth_scheme
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None
@@ -603,7 +618,7 @@ class TestCredentialManager:
         )
     )
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = auth_scheme
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None
@@ -623,7 +638,7 @@ class TestCredentialManager:
         grant_types_supported=["authorization_code", "client_credentials"],
     )
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = auth_scheme
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None
@@ -643,7 +658,7 @@ class TestCredentialManager:
         grant_types_supported=["authorization_code"],
     )
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = auth_scheme
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None
@@ -657,7 +672,7 @@ class TestCredentialManager:
     # Create a non-OAuth2/OIDC scheme
     auth_scheme = Mock()
 
-    auth_config = Mock(spec=AuthConfig)
+    auth_config = create_auth_config_mock()
     auth_config.auth_scheme = auth_scheme
     auth_config.raw_auth_credential = None
     auth_config.exchanged_auth_credential = None

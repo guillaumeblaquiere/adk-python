@@ -75,11 +75,30 @@ class CredentialManager:
       ```
   """
 
+  # A map to store client secrets in memory. Key is client_id, value is client_secret
+  _CLIENT_SECRETS: dict[str, str] = {}
+
   def __init__(
       self,
       auth_config: AuthConfig,
   ):
-    self._auth_config = auth_config
+    # We deep copy the auth_config to avoid modifying the original one passed by user
+    # and to ensure we can safely redact sensitive information
+    # However we cannot rely on copy.deepcopy because AuthConfig is a pydantic model
+    # and deepcopy on pydantic model is not always reliable? No, deepcopy works.
+    # But better to use model_copy if possible. AuthConfig inherits BaseModelWithConfig which is Pydantic.
+    # auth_config.model_copy(deep=True) is available in Pydantic V2.
+    # For safe side, we use the passed instance but we redact sensitive info immediately.
+    # Wait, modifying passed instance is bad practice if user reuses it.
+    # But CredentialManager usually takes ownership?
+    # Let's perform redaction on `self._auth_config` which we assign.
+    # And we should clone it first.
+    self._auth_config = auth_config.model_copy(deep=True)
+
+    # Secure the client secret
+    self._secure_client_secret(self._auth_config.raw_auth_credential)
+    self._secure_client_secret(self._auth_config.exchanged_auth_credential)
+
     self._exchanger_registry = CredentialExchangerRegistry()
     self._refresher_registry = CredentialRefresherRegistry()
     self._discovery_manager = OAuth2DiscoveryManager()
@@ -110,6 +129,31 @@ class CredentialManager:
         AuthCredentialTypes.OPEN_ID_CONNECT, oauth2_refresher
     )
 
+  def _secure_client_secret(self, credential: Optional[AuthCredential]):
+    """Extracts client secret to memory and redacts it from the credential."""
+    if (
+        credential
+        and credential.oauth2
+        and credential.oauth2.client_id
+        and credential.oauth2.client_secret
+        and credential.oauth2.client_secret != "<redacted>"
+    ):
+      logger.info(f"Securing client secret for client_id: {credential.oauth2.client_id}")
+      # Store in memory map
+      self._CLIENT_SECRETS[credential.oauth2.client_id] = (
+          credential.oauth2.client_secret
+      )
+      # Redact from config
+      credential.oauth2.client_secret = "<redacted>"
+    else:
+        if credential and credential.oauth2:
+             logger.debug(f"Not securing secret for client_id {credential.oauth2.client_id}: secret is {credential.oauth2.client_secret}")
+
+  @staticmethod
+  def get_client_secret(client_id: str) -> Optional[str]:
+    """Retrieves the client secret for a given client_id."""
+    return CredentialManager._CLIENT_SECRETS.get(client_id)
+
   def register_credential_exchanger(
       self,
       credential_type: AuthCredentialTypes,
@@ -124,6 +168,9 @@ class CredentialManager:
     self._exchanger_registry.register(credential_type, exchanger_instance)
 
   async def request_credential(self, callback_context: CallbackContext) -> None:
+    # We send the auth_config (which is already redacted in __init__) to the client
+    # Note: we need to ensure we don't send any stale exchanged credentials if they are not valid
+    # But usually CredentialManager manages that.
     callback_context.request_credential(self._auth_config)
 
   async def get_auth_credential(
@@ -218,9 +265,36 @@ class CredentialManager:
           self._auth_config.auth_scheme, credential
       )
     else:
+      # Restore client secret from memory map for exchange
+      restored = False
+      if (
+          credential.oauth2
+          and credential.oauth2.client_id
+          and credential.oauth2.client_id in self._CLIENT_SECRETS
+      ):
+        credential.oauth2.client_secret = self._CLIENT_SECRETS[
+            credential.oauth2.client_id
+        ]
+        restored = True
+      elif (
+          self._auth_config.raw_auth_credential
+          and self._auth_config.raw_auth_credential.oauth2
+          and self._auth_config.raw_auth_credential.oauth2.client_id
+          in self._CLIENT_SECRETS
+      ):
+        # Fallback to look up using raw credential client id if credential client id is missing (unlikely for valid flow)
+        credential.oauth2.client_secret = self._CLIENT_SECRETS[
+            self._auth_config.raw_auth_credential.oauth2.client_id
+        ]
+        restored = True
+
       exchanged_credential = await exchanger.exchange(
           credential, self._auth_config.auth_scheme
       )
+
+      # Redact client secret again after exchange to prevent leakage
+      if exchanged_credential.oauth2:
+        exchanged_credential.oauth2.client_secret = "<redacted>"
 
     return exchanged_credential, True
 

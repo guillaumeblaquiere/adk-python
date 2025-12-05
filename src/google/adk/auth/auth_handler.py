@@ -7,11 +7,6 @@
 #     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
 from __future__ import annotations
 
 from typing import TYPE_CHECKING
@@ -48,9 +43,30 @@ class AuthHandler:
       self,
   ) -> AuthCredential:
     exchanger = OAuth2CredentialExchanger()
-    return await exchanger.exchange(
-        self.auth_config.exchanged_auth_credential, self.auth_config.auth_scheme
-    )
+    
+    # Restore secret if needed
+    credential = self.auth_config.exchanged_auth_credential
+    redacted = False
+    original_secret = None
+    
+    if credential and credential.oauth2 and credential.oauth2.client_id:
+        # Check if secret needs restoration
+        from .credential_manager import CredentialManager
+        secret = CredentialManager.get_client_secret(credential.oauth2.client_id)
+        if secret and credential.oauth2.client_secret == "<redacted>":
+            original_secret = credential.oauth2.client_secret
+            credential.oauth2.client_secret = secret
+            redacted = True
+
+    try:
+        res = await exchanger.exchange(
+            credential, self.auth_config.auth_scheme
+        )
+        return res
+    finally:
+        # Always re-redact if we restored it
+        if redacted and credential and credential.oauth2:
+            credential.oauth2.client_secret = "<redacted>"
 
   async def parse_and_store_auth_response(self, state: State) -> None:
 
@@ -182,9 +198,19 @@ class AuthHandler:
       )
       scopes = list(scopes.keys())
 
+    client_id = auth_credential.oauth2.client_id
+    client_secret = auth_credential.oauth2.client_secret
+    
+    # Check if secret is redacted and restore it from manager
+    if client_secret == "<redacted>" and client_id:
+        from .credential_manager import CredentialManager
+        secret = CredentialManager.get_client_secret(client_id)
+        if secret:
+            client_secret = secret
+
     client = OAuth2Session(
-        auth_credential.oauth2.client_id,
-        auth_credential.oauth2.client_secret,
+        client_id,
+        client_secret,
         scope=" ".join(scopes),
         redirect_uri=auth_credential.oauth2.redirect_uri,
     )
