@@ -108,7 +108,9 @@ def update_credential_with_tokens(
       tokens: The OAuth2Token object containing new token information.
   """
   auth_credential.oauth2.access_token = tokens.get("access_token")
-  sys.stderr.write(f"[DEBUG] Assigned access_token: {auth_credential.oauth2.access_token}\n")
+  sys.stderr.write(
+      f"[DEBUG] Assigned access_token: {auth_credential.oauth2.access_token}\n"
+  )
   auth_credential.oauth2.refresh_token = tokens.get("refresh_token")
   auth_credential.oauth2.expires_at = (
       int(tokens.get("expires_at")) if tokens.get("expires_at") else None

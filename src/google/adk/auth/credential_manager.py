@@ -138,7 +138,9 @@ class CredentialManager:
         and credential.oauth2.client_secret
         and credential.oauth2.client_secret != "<redacted>"
     ):
-      logger.info(f"Securing client secret for client_id: {credential.oauth2.client_id}")
+      logger.info(
+          f"Securing client secret for client_id: {credential.oauth2.client_id}"
+      )
       # Store in memory map
       self._CLIENT_SECRETS[credential.oauth2.client_id] = (
           credential.oauth2.client_secret
@@ -146,8 +148,11 @@ class CredentialManager:
       # Redact from config
       credential.oauth2.client_secret = "<redacted>"
     else:
-        if credential and credential.oauth2:
-             logger.debug(f"Not securing secret for client_id {credential.oauth2.client_id}: secret is {credential.oauth2.client_secret}")
+      if credential and credential.oauth2:
+        logger.debug(
+            f"Not securing secret for client_id {credential.oauth2.client_id}:"
+            f" secret is {credential.oauth2.client_secret}"
+        )
 
   @staticmethod
   def get_client_secret(client_id: str) -> Optional[str]:

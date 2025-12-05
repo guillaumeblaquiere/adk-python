@@ -36,16 +36,16 @@ from google.adk.auth.oauth2_discovery import AuthorizationServerMetadata
 import pytest
 
 
-
 def create_auth_config_mock():
   """Creates a mock AuthConfig that returns itself on model_copy."""
-  # We remove spec=AuthConfig because accessing Pydantic fields on a spec-ed mock 
+  # We remove spec=AuthConfig because accessing Pydantic fields on a spec-ed mock
   # can fail if they are not seen as class attributes or if we need dynamic attributes.
-  m = Mock() 
-  m.spec = AuthConfig # Optional: if we want isinstance to work, but Mock(spec=X) enforces attributes.
+  m = Mock()
+  m.spec = AuthConfig  # Optional: if we want isinstance to work, but Mock(spec=X) enforces attributes.
   # Let's just use a plain Mock and configure what we need.
   m.model_copy.side_effect = lambda **kwargs: m
   return m
+
 
 class TestCredentialManager:
   """Test suite for CredentialManager."""

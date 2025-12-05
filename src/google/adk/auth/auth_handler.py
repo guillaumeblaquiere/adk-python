@@ -43,30 +43,29 @@ class AuthHandler:
       self,
   ) -> AuthCredential:
     exchanger = OAuth2CredentialExchanger()
-    
+
     # Restore secret if needed
     credential = self.auth_config.exchanged_auth_credential
     redacted = False
     original_secret = None
-    
+
     if credential and credential.oauth2 and credential.oauth2.client_id:
-        # Check if secret needs restoration
-        from .credential_manager import CredentialManager
-        secret = CredentialManager.get_client_secret(credential.oauth2.client_id)
-        if secret and credential.oauth2.client_secret == "<redacted>":
-            original_secret = credential.oauth2.client_secret
-            credential.oauth2.client_secret = secret
-            redacted = True
+      # Check if secret needs restoration
+      from .credential_manager import CredentialManager
+
+      secret = CredentialManager.get_client_secret(credential.oauth2.client_id)
+      if secret and credential.oauth2.client_secret == "<redacted>":
+        original_secret = credential.oauth2.client_secret
+        credential.oauth2.client_secret = secret
+        redacted = True
 
     try:
-        res = await exchanger.exchange(
-            credential, self.auth_config.auth_scheme
-        )
-        return res
+      res = await exchanger.exchange(credential, self.auth_config.auth_scheme)
+      return res
     finally:
-        # Always re-redact if we restored it
-        if redacted and credential and credential.oauth2:
-            credential.oauth2.client_secret = "<redacted>"
+      # Always re-redact if we restored it
+      if redacted and credential and credential.oauth2:
+        credential.oauth2.client_secret = "<redacted>"
 
   async def parse_and_store_auth_response(self, state: State) -> None:
 
@@ -200,13 +199,14 @@ class AuthHandler:
 
     client_id = auth_credential.oauth2.client_id
     client_secret = auth_credential.oauth2.client_secret
-    
+
     # Check if secret is redacted and restore it from manager
     if client_secret == "<redacted>" and client_id:
-        from .credential_manager import CredentialManager
-        secret = CredentialManager.get_client_secret(client_id)
-        if secret:
-            client_secret = secret
+      from .credential_manager import CredentialManager
+
+      secret = CredentialManager.get_client_secret(client_id)
+      if secret:
+        client_secret = secret
 
     client = OAuth2Session(
         client_id,
