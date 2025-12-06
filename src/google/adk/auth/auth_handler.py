@@ -47,7 +47,6 @@ class AuthHandler:
     # Restore secret if needed
     credential = self.auth_config.exchanged_auth_credential
     redacted = False
-    original_secret = None
 
     if credential and credential.oauth2 and credential.oauth2.client_id:
       # Check if secret needs restoration
@@ -55,7 +54,6 @@ class AuthHandler:
 
       secret = CredentialManager.get_client_secret(credential.oauth2.client_id)
       if secret and credential.oauth2.client_secret == "<redacted>":
-        original_secret = credential.oauth2.client_secret
         credential.oauth2.client_secret = secret
         redacted = True
 
