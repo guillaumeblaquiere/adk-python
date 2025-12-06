@@ -286,14 +286,14 @@ class CredentialManager:
         ]
         restored = True
 
-      exchanged_credential = await exchanger.exchange(
-          credential, self._auth_config.auth_scheme
-      )
-
-      # Redact client secret again after exchange to prevent leakage
-      if exchanged_credential.oauth2:
-        exchanged_credential.oauth2.client_secret = "<redacted>"
-
+      try:
+        exchanged_credential = await exchanger.exchange(
+            credential, self._auth_config.auth_scheme
+        )
+      finally:
+        # Redact client secret again after exchange to prevent leakage
+        if restored and credential.oauth2:
+          credential.oauth2.client_secret = "<redacted>"
     return exchanged_credential, True
 
   async def _refresh_credential(
