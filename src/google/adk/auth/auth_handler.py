@@ -18,6 +18,7 @@ from .auth_schemes import AuthSchemeType
 from .auth_schemes import OpenIdConnectWithConfig
 from .auth_tool import AuthConfig
 from .exchanger.oauth2_credential_exchanger import OAuth2CredentialExchanger
+from .credential_manager import CredentialManager
 
 if TYPE_CHECKING:
   from ..sessions.state import State
@@ -49,9 +50,6 @@ class AuthHandler:
     redacted = False
 
     if credential and credential.oauth2 and credential.oauth2.client_id:
-      # Check if secret needs restoration
-      from .credential_manager import CredentialManager
-
       secret = CredentialManager.get_client_secret(credential.oauth2.client_id)
       if secret and credential.oauth2.client_secret == "<redacted>":
         credential.oauth2.client_secret = secret
@@ -200,8 +198,6 @@ class AuthHandler:
 
     # Check if secret is redacted and restore it from manager
     if client_secret == "<redacted>" and client_id:
-      from .credential_manager import CredentialManager
-
       secret = CredentialManager.get_client_secret(client_id)
       if secret:
         client_secret = secret
