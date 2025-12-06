@@ -82,17 +82,10 @@ class CredentialManager:
       self,
       auth_config: AuthConfig,
   ):
-    # We deep copy the auth_config to avoid modifying the original one passed by user
-    # and to ensure we can safely redact sensitive information
-    # However we cannot rely on copy.deepcopy because AuthConfig is a pydantic model
-    # and deepcopy on pydantic model is not always reliable? No, deepcopy works.
-    # But better to use model_copy if possible. AuthConfig inherits BaseModelWithConfig which is Pydantic.
-    # auth_config.model_copy(deep=True) is available in Pydantic V2.
-    # For safe side, we use the passed instance but we redact sensitive info immediately.
-    # Wait, modifying passed instance is bad practice if user reuses it.
-    # But CredentialManager usually takes ownership?
-    # Let's perform redaction on `self._auth_config` which we assign.
-    # And we should clone it first.
+    # We deep copy the auth_config to avoid modifying the original object passed
+    # by the user. This allows for safe redaction of sensitive information without
+    # causing side effects.
+
     self._auth_config = auth_config.model_copy(deep=True)
 
     # Secure the client secret
