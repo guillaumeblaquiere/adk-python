@@ -47,21 +47,10 @@ class AuthHandler:
 
     # Restore secret if needed
     credential = self.auth_config.exchanged_auth_credential
-    redacted = False
 
-    if credential and credential.oauth2 and credential.oauth2.client_id:
-      secret = CredentialManager.get_client_secret(credential.oauth2.client_id)
-      if secret and credential.oauth2.client_secret == "<redacted>":
-        credential.oauth2.client_secret = secret
-        redacted = True
-
-    try:
+    with CredentialManager.restore_client_secret(credential):
       res = await exchanger.exchange(credential, self.auth_config.auth_scheme)
       return res
-    finally:
-      # Always re-redact if we restored it
-      if redacted and credential and credential.oauth2:
-        credential.oauth2.client_secret = "<redacted>"
 
   async def parse_and_store_auth_response(self, state: State) -> None:
 
@@ -194,29 +183,25 @@ class AuthHandler:
       scopes = list(scopes.keys())
 
     client_id = auth_credential.oauth2.client_id
-    client_secret = auth_credential.oauth2.client_secret
 
-    # Check if secret is redacted and restore it from manager
-    if client_secret == "<redacted>" and client_id:
-      secret = CredentialManager.get_client_secret(client_id)
-      if secret:
-        client_secret = secret
 
-    client = OAuth2Session(
-        client_id,
-        client_secret,
-        scope=" ".join(scopes),
-        redirect_uri=auth_credential.oauth2.redirect_uri,
-    )
-    params = {
-        "access_type": "offline",
-        "prompt": "consent",
-    }
-    if auth_credential.oauth2.audience:
-      params["audience"] = auth_credential.oauth2.audience
-    uri, state = client.create_authorization_url(
-        url=authorization_endpoint, **params
-    )
+    with CredentialManager.restore_client_secret(auth_credential):
+      client_secret = auth_credential.oauth2.client_secret
+      client = OAuth2Session(
+          client_id,
+          client_secret,
+          scope=" ".join(scopes),
+          redirect_uri=auth_credential.oauth2.redirect_uri,
+      )
+      params = {
+          "access_type": "offline",
+          "prompt": "consent",
+      }
+      if auth_credential.oauth2.audience:
+        params["audience"] = auth_credential.oauth2.audience
+      uri, state = client.create_authorization_url(
+          url=authorization_endpoint, **params
+      )
 
     exchanged_auth_credential = auth_credential.model_copy(deep=True)
     exchanged_auth_credential.oauth2.auth_uri = uri

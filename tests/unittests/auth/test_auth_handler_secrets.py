@@ -29,9 +29,13 @@ import pytest
 
 class TestAuthHandlerSecrets:
 
-  def setUp(self):
-    # Clear secret store
+  @pytest.fixture(autouse=True)
+  def clear_credential_manager_secrets(self):
+    """Clear CredentialManager secrets buffer before/after each test."""
     CredentialManager._CLIENT_SECRETS = {}
+    yield
+    CredentialManager._CLIENT_SECRETS = {}
+
 
   @pytest.mark.asyncio
   async def test_exchange_auth_token_restores_and_reredacts_secret(self):

@@ -14,6 +14,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import Optional
 
@@ -135,7 +136,7 @@ class CredentialManager:
           f"Securing client secret for client_id: {credential.oauth2.client_id}"
       )
       # Store in memory map
-      self._CLIENT_SECRETS[credential.oauth2.client_id] = (
+      CredentialManager._CLIENT_SECRETS[credential.oauth2.client_id] = (
           credential.oauth2.client_secret
       )
       # Redact from config
@@ -250,6 +251,40 @@ class CredentialManager:
     """Load credential from auth response in callback context."""
     return callback_context.get_auth_response(self._auth_config)
 
+  @staticmethod
+  @contextlib.contextmanager
+  def restore_client_secret(credential: AuthCredential, secret: str = None):
+    """Context manager to temporarily restore client secret in a credential.
+
+    Args:
+        credential: The credential to restore secret for.
+        secret: Optional secret to use. If not provided, looks up by client_id.
+    """
+    if not credential or not credential.oauth2:
+      yield
+      return
+
+    restored = False
+    if secret:
+      credential.oauth2.client_secret = secret
+      restored = True
+    elif (
+        credential.oauth2.client_id
+        and credential.oauth2.client_secret == "<redacted>"
+    ):
+      stored_secret = CredentialManager.get_client_secret(
+          credential.oauth2.client_id
+      )
+      if stored_secret:
+        credential.oauth2.client_secret = stored_secret
+        restored = True
+
+    try:
+      yield
+    finally:
+      if restored:
+        credential.oauth2.client_secret = "<redacted>"
+
   async def _exchange_credential(
       self, credential: AuthCredential
   ) -> tuple[AuthCredential, bool]:
@@ -263,37 +298,27 @@ class CredentialManager:
           self._auth_config.auth_scheme, credential
       )
     else:
-      # Restore client secret from memory map for exchange
-      restored = False
+      # Determine if we need to fallback/lookup secret from raw credential
+      secret_to_use = None
       if (
           credential.oauth2
           and credential.oauth2.client_id
-          and credential.oauth2.client_id in self._CLIENT_SECRETS
-      ):
-        credential.oauth2.client_secret = self._CLIENT_SECRETS[
-            credential.oauth2.client_id
-        ]
-        restored = True
-      elif (
-          self._auth_config.raw_auth_credential
+          and credential.oauth2.client_id not in self._CLIENT_SECRETS
+          and self._auth_config.raw_auth_credential
           and self._auth_config.raw_auth_credential.oauth2
           and self._auth_config.raw_auth_credential.oauth2.client_id
           in self._CLIENT_SECRETS
       ):
-        # Fallback to look up using raw credential client id if credential client id is missing (unlikely for valid flow)
-        credential.oauth2.client_secret = self._CLIENT_SECRETS[
+        # Fallback to look up using raw credential client id
+        secret_to_use = self._CLIENT_SECRETS[
             self._auth_config.raw_auth_credential.oauth2.client_id
         ]
-        restored = True
 
-      try:
+      with self.restore_client_secret(credential, secret=secret_to_use):
         exchanged_credential = await exchanger.exchange(
             credential, self._auth_config.auth_scheme
         )
-      finally:
-        # Redact client secret again after exchange to prevent leakage
-        if restored and credential.oauth2:
-          credential.oauth2.client_secret = "<redacted>"
+
     return exchanged_credential, True
 
   async def _refresh_credential(

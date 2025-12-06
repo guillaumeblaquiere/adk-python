@@ -31,7 +31,7 @@ from google.adk.auth.auth_schemes import AuthSchemeType
 from google.adk.auth.auth_schemes import ExtendedOAuth2
 from google.adk.auth.auth_tool import AuthConfig
 from google.adk.auth.credential_manager import CredentialManager
-from google.adk.auth.credential_manager import ServiceAccountCredentialExchanger
+from google.adk.tools.openapi_tool.auth.credential_exchangers.service_account_exchanger import ServiceAccountCredentialExchanger
 from google.adk.auth.oauth2_discovery import AuthorizationServerMetadata
 import pytest
 

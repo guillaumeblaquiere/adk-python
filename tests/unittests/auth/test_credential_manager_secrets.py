@@ -13,6 +13,14 @@ from google.adk.auth.credential_manager import CredentialManager
 import pytest
 
 
+@pytest.fixture(autouse=True)
+def clear_credential_manager_secrets():
+  """Clear CredentialManager secrets buffer before/after each test."""
+  CredentialManager._CLIENT_SECRETS = {}
+  yield
+  CredentialManager._CLIENT_SECRETS = {}
+
+
 @pytest.mark.asyncio
 async def test_credential_manager_redacts_secrets_in_raw_credential():
   """Test that CredentialManager redacts client_secret from raw_auth_credential upon initialization."""
